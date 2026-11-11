@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  backend:
+    image: storex-backend:v2
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/storex_db
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: on-failure
+
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=storex_db
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    volumes:
+      # Lưu trữ bền vững dữ liệu cơ sở dữ liệu trên Docker Volume
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready kiểm tra PostgreSQL đã sẵn sàng nhận kết nối hay chưa
+      test: ["CMD-SHELL", "pg_isready -U admin -d storex_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: always
+
+  redis:
+    image: redis:alpine
+    healthcheck:
+      # redis-cli ping kiểm tra Redis đã sẵn sàng phản hồi PONG hay chưa
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+volumes:
+  # Khai báo named volume cho PostgreSQL
+  postgres_data:
+    driver: local

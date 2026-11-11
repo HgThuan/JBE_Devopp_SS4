@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    image: storex-backend:latest
+    ports:
+      - "8080:8080"
+    environment:
+      # SỬA LỖI: Đổi 'localhost' thành tên service 'postgres'
+      # Docker Compose có cơ chế Embedded DNS tự động phân giải tên service 'postgres' thành IP nội bộ của container database
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/storex
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=secret
+    depends_on:
+      - postgres
+    restart: on-failure
+
+  postgres:
+    image: postgres:13
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=storex
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres_data:

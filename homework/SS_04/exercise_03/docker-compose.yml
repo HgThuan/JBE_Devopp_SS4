@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  backend:
+    image: storex-backend:v3
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+    networks:
+      - storex-net
+    depends_on:
+      - postgres
+    restart: on-failure
+
+  postgres:
+    image: postgres:13
+    # BẢO MẬT: Đã loại bỏ 'ports: - "5432:5432"' để ngăn chặn truy cập trái phép từ máy host hoặc bên ngoài Internet
+    # Backend vẫn giao tiếp bình thường với PostgreSQL qua cổng 5432 bên trong mạng nội bộ storex-net
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME:-storex_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - storex-net
+    restart: always
+
+networks:
+  # Khai báo Custom Network để cô lập lưu lượng mạng giữa các container của StoreX
+  storex-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
